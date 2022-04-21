@@ -1,7 +1,10 @@
 import org.apache.kafka.clients.consumer.{ConsumerConfig, KafkaConsumer}
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
 
-import java.util.Properties
+import java.time.Duration
+import java.util
+import java.util.{Locale, Properties}
+import scala.io.StdIn.readLine
 
 object WordCountPerLineApp extends App {
 
@@ -19,8 +22,12 @@ object WordCountPerLineApp extends App {
   val producer = new KafkaProducer[String, String](producerProps)
   val consumer = new KafkaConsumer[String, String](consumerProps)
 
+  while (true) {
+    producer.send(new ProducerRecord[String, String]("word-counter", readLine("Enter string: ")))
+  }
+
   import scala.jdk.CollectionConverters._
 
-  consumer.subscribe(Seq("output").asJava)
+  consumer.subscribe(Seq("word-counter").asJava)
 
 }
