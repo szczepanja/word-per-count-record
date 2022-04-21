@@ -30,4 +30,11 @@ object WordCountPerLineApp extends App {
 
   consumer.subscribe(Seq("word-counter").asJava)
 
+  def wordCounter(str: String) = {
+    str.split("\\s+")
+      .foldLeft(Map.empty[String, Int]) {
+      (acc, word) => acc + (word -> (acc.getOrElse(word, 0) + 1))
+    }
+  }
+
 }
