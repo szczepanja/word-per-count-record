@@ -1,17 +1,23 @@
 import org.apache.kafka.clients.consumer.{ConsumerConfig, KafkaConsumer}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
+import org.apache.kafka.common.serialization.{IntegerSerializer, StringDeserializer, StringSerializer}
 
 import java.time.Duration
 import java.util.Properties
 
 object WordCountPerLineApp extends App {
 
-  val consumerProps = new Properties()
-  consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
-  consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
-  consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")
-  consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "consumer")
+  val props = new Properties()
+  props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer])
+  props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer])
+  props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")
+  props.put(ConsumerConfig.GROUP_ID_CONFIG, "consumer")
+  val consumer = new KafkaConsumer[String, String](props)
 
-  val consumer = new KafkaConsumer[String, String](consumerProps)
+
+  props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
+  props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, classOf[IntegerSerializer])
+  val producer = new KafkaProducer[String, Int](props)
 
   import scala.jdk.CollectionConverters._
 
@@ -25,8 +31,10 @@ object WordCountPerLineApp extends App {
         .groupBy(identity)
         .view
         .mapValues(_.length)
-        .foreach(println)
+        .foreach { case r@(word, occ) =>
+          println(r)
+          producer.send(new ProducerRecord[String, Int]("word-counter", word, occ))
+        }
     }
   }
-
 }
